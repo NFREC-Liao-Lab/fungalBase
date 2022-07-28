@@ -1,0 +1,22 @@
+{
+  "name": "nodeendpoint",
+  "version": "1.0.0",
+  "description": "Gets results files data",
+  "main": "getFileData.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./src/getFileData.js",
+    "start:dev": "nodemon ./src/getFileData.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "fs": "^0.0.1-security",
+    "mysql": "^2.18.1",
+    "nodemon": "^2.0.16"
+  }
+}
