@@ -1,7 +1,10 @@
 import styles from "../../../styles/Home.module.css"
 import TaxonomyResultsTable from "../../../components/taxonomyResultsTable";
-import { useRouter } from "next/router";
 import GenusTableData from "../../../components/genusTableData";
+import { useState, useEffect } from "react";
+import { Bar } from "react-chartjs-2";
+import "chart.js/auto";
+
 
 
 export default function genusSearchResults(props){
@@ -9,14 +12,32 @@ export default function genusSearchResults(props){
     const search = props.search;
     const availableSpecies = props.availableSpecies;
     const transporterData = props.transporterData;
+    const [transporterSearch, setTransporterSearch] = useState("");
+    const [transporterBarChartData, setTransporterBarChartData] = useState(props.nullChartData);
+    const [chartID, setChartID] = useState({index: -1, value: ""});
+
+    useEffect(() => {
+        setChartID(getChartID(props.transporterIDs, transporterSearch));
+    }, [transporterSearch])
+
+    useEffect(() => {
+        let newData = makeTransporterChartData(transporterData, chartID.index, availableSpecies)
+        setTransporterBarChartData(newData);
+    }, [chartID])
+
+    const handleTransporterSearch = (event) => {
+        event.preventDefault();
+        const search = event.target[0].value;
+        setTransporterSearch(search);
+    }
 
     return(
         <div className={styles.genusPageWrapper}>
             <h1 className={styles.title}>Genus- {genus}</h1>
             <ul className={styles.taxonomyList}>
                 {
-                    availableSpecies.map((species) => (
-                        <div className={styles.taxonomyListItem}>
+                    availableSpecies.map((species, index) => (
+                        <div className={styles.taxonomyListItem} key={index}>
                             <TaxonomyResultsTable search={search} filters={"genus"} data={species} levelToDisplay={"species"}/>
                         </div>
                     ))
@@ -25,6 +46,18 @@ export default function genusSearchResults(props){
             <h2>Transporter Quantities in Genus</h2>
             <div className={styles.transporterTable}>
                 <GenusTableData data={transporterData} transporterIDs={props.transporterIDs}/>
+            </div>
+            <div>
+                <form onSubmit={handleTransporterSearch}>
+                    <input placeholder="Enter Sequence ID to Compare Here..." type="text"></input>
+                    <input type="submit"></input>
+                </form>
+            </div>
+            <div>
+                <h3>{transporterSearch}</h3>
+            </div>
+            <div className={styles.transporterBarChartWrapper}>
+                <Bar data={transporterBarChartData}></Bar>
             </div>
         </div>
     );
@@ -68,6 +101,11 @@ export async function getServerSideProps(context){
     const transporterData = tableData.data;
     const transporterIDs = tableData.keys;
 
+    let nullChartData = [{}]
+    for(let i = 0; i < availableSpecies.length; i++){
+        nullChartData[0][availableSpecies[i].species] = 0;
+    }
+    nullChartData = makeTransporterChartData(nullChartData, 0, availableSpecies);
 
     return{
         props: {
@@ -76,6 +114,7 @@ export async function getServerSideProps(context){
             search: search,
             transporterData: transporterData,
             transporterIDs: transporterIDs,
+            nullChartData: nullChartData,
         }
     }
 
@@ -138,4 +177,52 @@ function createAverages(data){
         data[i]["Average"] = average;
     }
     return data;
+}
+function makeTransporterChartData(transporterData, index, availableSpecies){
+    let labels;
+    if(index === -1){
+        labels = availableSpecies
+        index = 0;
+    }
+    else{
+        labels = Object.keys(transporterData[index]);
+    }
+    const dataArr = [];
+    for(let i = 0; i < labels.length; i++){
+        dataArr.push(transporterData[index][labels[i]]);
+    }
+    dataArr[dataArr.length-1] = Number(dataArr[dataArr.length-1]);
+    console.log(dataArr);
+    const data = {
+        labels: labels,
+        datasets: [{
+            label: "Transporter Quantities",
+            data: dataArr,
+            backGroundColor: [
+                'rgb(41, 47, 54)',
+                'rgb(78, 205, 196)',
+                'rgb(247, 255, 247)',
+                'rgb(255, 107, 107)',
+                'rgb(255, 230, 109)',
+            ],
+        }]
+    }
+    return data;
+
+}
+
+function getChartID(transporterIDs, search){
+    console.log("search is: ", search);
+    for(let i = 0; i < transporterIDs.length; i++){
+        if(transporterIDs[i] === search){
+            return {
+                index: i,
+                value: transporterIDs[i],
+            };
+        }
+    }
+    return {
+        index: -1,
+        value: "",
+    };
 }
