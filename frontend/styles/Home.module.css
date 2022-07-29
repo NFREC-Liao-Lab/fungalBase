@@ -532,6 +532,8 @@
 
 .transporterTable{
   height: 40rem;
+  max-width: 80%;
+  overflow-x: scroll;
   overflow-y: scroll;
   border-bottom-style: solid;
   border-top-style: solid;
@@ -614,4 +616,8 @@
 .genusTable{
   height: 50rem;
   overflow-y: scroll;
+}
+
+.transporterBarChartWrapper{
+  width: 80%;
 }
