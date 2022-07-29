@@ -12,8 +12,8 @@ export default function GenusTableData(props){
             <thead>
                 <tr>
                     <th className={styles.resultsTable}>Transporter ID <br></br> &#40;Click for more Info&#41;</th>
-                    {dataKeys.map((key) => (
-                        <th className={styles.resultsTable}>{key}</th>
+                    {dataKeys.map((key, index) => (
+                        <th className={styles.resultsTable} key={index}>{key}</th>
                     ))}
                 </tr>
             </thead>
@@ -21,7 +21,7 @@ export default function GenusTableData(props){
                     {
                         data.map((element, index) => {
                             return(
-                                <tr>
+                                <tr key={index}>
                                     <td className={styles.resultsTable}>
                                         <a 
                                         href={`https://www.tcdb.org/search/result.php?tc=${transporterIDs[index]}`}
@@ -32,9 +32,9 @@ export default function GenusTableData(props){
                                         </a>
                                     </td>
                                     {
-                                        dataKeys.map((key) => {
+                                        dataKeys.map((key, index) => {
                                             return(
-                                                <td className={styles.resultsTable}>{element[key]}</td>
+                                                <td className={styles.resultsTable} key={index}>{element[key]}</td>
                                             )
                                         })
                                     }
