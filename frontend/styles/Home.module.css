@@ -532,8 +532,6 @@
 
 .transporterTable{
   height: 40rem;
-  max-width: 80%;
-  overflow-x: scroll;
   overflow-y: scroll;
   border-bottom-style: solid;
   border-top-style: solid;
