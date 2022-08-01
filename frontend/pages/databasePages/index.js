@@ -53,7 +53,7 @@ export default function directSearch(props){
                         <h3>Filter from Phylum: </h3>
                     </div>
                     {phylums.map((element, index) => (
-                        <Link href={{
+                        <Link key={index} href={{
                             pathname: `/databasePages/taxonomyResults/${element}`,
                             query: {
                                 "search": JSON.stringify([element.phylum]),
