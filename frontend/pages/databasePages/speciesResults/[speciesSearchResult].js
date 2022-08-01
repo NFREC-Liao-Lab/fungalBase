@@ -105,7 +105,7 @@ export default function speciesSearchResult(props){
                     </select>
                     <h3 id={styles.tableTitle}>Full Species Transporter Gene Data</h3>
                     <div className={styles.transporterTable}>
-                        <TransporterTable transporterDensity={tableLevelState.selected}></TransporterTable>
+                        <TransporterTable transporterDensity={tableLevelState.selected}/>
                     </div>
                 </div>
             </div>
@@ -115,6 +115,7 @@ export default function speciesSearchResult(props){
 
 export async function getServerSideProps(context){
     const species = JSON.parse(context.query.species);
+    console.log({species})
     const speciesDataOptions = {
         method: 'POST',
         headers: {
@@ -171,7 +172,7 @@ export function getTransporterDensity(originalData, numberOfTransporters, level)
     }
 
     //sort data by count
-    data.sort((a, b) => (a.count < b.count) ? 1 : -1)
+    data.sort((a, b) => b.count - a.count);
 
     //make table data that is array of objects that have props of seqID, transporterID, and quantity
 
