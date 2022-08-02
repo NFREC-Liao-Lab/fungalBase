@@ -335,6 +335,28 @@ function checkForOrderColumn(genomeData){
 
 app.post("/retrieveGenusData", async (req, res) => {
     const genus = req.body.genus;
+    let level = req.body.level
+
+    switch(level){
+        case("Level 5"):
+            level = "Transporter_id"
+            break;
+        case("Level 4"):
+            level = "Transporter_level4"
+            break;
+        case("Level 3"):
+            level = "Transporter_level3"
+            break;
+        case("Level 2"):
+            level = "Transporter_level2"
+            break;
+        case("Level 1"):
+            level = "Transporter_level1"
+            break;
+        default:
+            res.status(500);
+    }
+
 
     //get Genome IDs
     const genomeIDQuery = "SELECT Genome_id, species FROM genomesInfo WHERE genus=?";
@@ -343,12 +365,14 @@ app.post("/retrieveGenusData", async (req, res) => {
     for(let i = 0; i < genomeIDs.length; i++){
         genomeIDArray.push(genomeIDs[i].Genome_id);
     }
+
     //Use genome IDs to get transporters... a lot of data
-    let transporterQuery = "SELECT Transporter_id, Genome_id FROM proteinSeqID WHERE Genome_id=?";
+    let transporterQuery = `SELECT ${level}, Genome_id FROM proteinSeqID WHERE Genome_id=?`;
     for(let i = 1; i < genomeIDs.length; i++){
         transporterQuery += " OR Genome_id=?"
     }
     transporterQuery += ";"
+    console.log({transporterQuery, genomeIDArray})
     let transporterData = await connection.query(transporterQuery, genomeIDArray)
     //add species to
     for(let i = 0; i < transporterData.length; i++){
@@ -360,6 +384,6 @@ app.post("/retrieveGenusData", async (req, res) => {
             }
         }
     }
-    console.log(transporterData[1000]);
+
     res.status(200).json({data: transporterData});
 });

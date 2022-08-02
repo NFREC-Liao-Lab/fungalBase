@@ -408,6 +408,7 @@
   margin: 2rem;
   font-family: Georgia, 'Times New Roman', Times, serif;
   font-size: medium;
+  background-color: aliceblue;
   
 }
 
@@ -528,13 +529,16 @@
 
 .transporterTableWrapper{
   margin-right: 1rem;
+  border-style: solid;
+  border-width: 1px;
+  height: min-content;
 }
 
 .transporterTable{
-  height: 40rem;
+  max-height: 40rem;
   overflow-y: scroll;
-  border-bottom-style: solid;
-  border-top-style: solid;
+  overscroll-behavior: none;
+
 }
 
 .transporterChartsWrapperWrapper {
@@ -618,4 +622,43 @@
 
 .transporterBarChartWrapper{
   width: 80%;
+}
+
+.transporterIDSearchWrapper{
+  display: flex;
+}
+
+.transporterIDSearchWrapper .button {
+  background-color: aliceblue;
+}
+
+.transporterIDSearch{
+  background-color: white;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  width: 25rem;
+  border-style: solid;
+  border-color: black;
+  border-radius: 5px;
+  height: 2rem;
+}
+
+#transporterSearchHeader {
+  margin-bottom: 0;
+}
+
+#genusTransporterLevelWrapper {
+  display: flex;
+  align-items: center;
+}
+
+#genusLevelSelect {
+  background-color: aliceblue;
+  border-style: solid;
+  border-width: 2px;
+  padding: 0.5rem;
+  margin-left: 2rem;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: inherit;
+  cursor: pointer;
+  display: grid;
 }

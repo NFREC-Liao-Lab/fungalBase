@@ -92,7 +92,7 @@ export default function speciesSearchResult(props){
                         </div>
                     </div>
                 </div>
-                <div className={styles.transporterTableWrapper}>
+                <div>
                     <select className={styles.button}
                         onChange={handleLevelChange}
                         value={tableLevelState.value}
@@ -104,8 +104,10 @@ export default function speciesSearchResult(props){
                         <option value="level1">Transporter Level 1</option>
                     </select>
                     <h3 id={styles.tableTitle}>Full Species Transporter Gene Data</h3>
-                    <div className={styles.transporterTable}>
-                        <TransporterTable transporterDensity={tableLevelState.selected}/>
+                    <div className={styles.transporterTableWrapper}>
+                        <div className={styles.transporterTable}>
+                            <TransporterTable transporterDensity={tableLevelState.selected}/>
+                        </div>
                     </div>
                 </div>
             </div>
