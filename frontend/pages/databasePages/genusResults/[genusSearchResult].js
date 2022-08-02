@@ -11,24 +11,63 @@ export default function genusSearchResults(props){
     const genus = props.genus;
     const search = props.search;
     const availableSpecies = props.availableSpecies;
-    const transporterData = props.transporterData;
-    const [transporterSearch, setTransporterSearch] = useState("");
-    const [transporterBarChartData, setTransporterBarChartData] = useState(props.nullChartData);
-    const [chartID, setChartID] = useState({index: -1, value: ""});
+    const [transporterSearch, setTransporterSearch] = useState(props.transporterIDs[0]);
+    const [transporterBarChartData, setTransporterBarChartData] = useState();
+    const [chartID, setChartID] = useState({index: 0, value: ""});
+    const [chartLoaded, setChartLoaded] = useState(false);
+    const [transporterLevelState, setTransporterLevelState] = useState("Level 5");
+    const [transporterDataState, setTransporterDataState] = useState(props.transporterData);
+    const [transporterIDsState, setTransporterIDsState] = useState(props.transporterIDs);
+    const [genusTableDataLoadState, setGenusTableDataLoadState] = useState(false);
 
     useEffect(() => {
-        setChartID(getChartID(props.transporterIDs, transporterSearch));
+        setChartID(getChartID(transporterIDsState, transporterSearch));
     }, [transporterSearch])
-
     useEffect(() => {
-        let newData = makeTransporterChartData(transporterData, chartID.index, availableSpecies)
+        let newData = makeTransporterChartData(transporterDataState, chartID.index)
         setTransporterBarChartData(newData);
+        setChartLoaded(true);
     }, [chartID])
 
+    useEffect(() => {
+        const fetchTransporterData = async () => {
+            // const transporterData = await adjustTransporterData(transporterLevelState, availableSpecies, genus);
+            //query to get data about genus
+            const retrieveGenusDataOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    genus: genus,
+                    level: transporterLevelState
+                })
+            }
+            const genusDataRes = await fetch("http://localhost:4000/retrieveGenusData", retrieveGenusDataOptions);
+            const genusData = await genusDataRes.json();
+            console.log(genusData)
+
+            let sqlLevel = getLevelSQLName(transporterLevelState);
+
+            //count transporters by species
+            const tableData = countTransporters(genusData.data, availableSpecies, sqlLevel);
+            const transporterData = tableData.data;
+            const transporterIDs = tableData.keys;
+            setTransporterDataState(transporterData);
+            setTransporterIDsState(transporterIDs);
+            setGenusTableDataLoadState(true);
+        }
+        fetchTransporterData()  
+    }, [transporterLevelState])
+    
     const handleTransporterSearch = (event) => {
         event.preventDefault();
         const search = event.target[0].value;
         setTransporterSearch(search);
+    }
+
+    const handleLevelChange = (event) => {
+        setTransporterLevelState(event.target.value); 
     }
 
     return(
@@ -43,21 +82,45 @@ export default function genusSearchResults(props){
                     ))
                 }
             </ul>
-            <h2>Transporter Quantities in Genus</h2>
-            <div className={styles.transporterTable}>
-                <GenusTableData data={transporterData} transporterIDs={props.transporterIDs}/>
+            <div id={styles.genusTransporterLevelWrapper}>
+                <h2>Transporter Quantities in Genus</h2>
+                <select onChange={handleLevelChange}
+                        value={transporterLevelState}
+                        className={styles.button}
+                    >
+                        <option value="Level 5">Transporter Level 5</option>
+                        <option value="Level 4">Transporter Level 4</option>
+                        <option value="Level 3">Transporter Level 3</option>
+                        <option value="Level 2">Transporter Level 2</option>
+                        <option value="Level 1">Transporter Level 1</option>
+                    </select>
             </div>
-            <div>
+            {
+                !genusTableDataLoadState && 
+                <h3>Loading Table...</h3>
+            }
+            {
+                genusTableDataLoadState &&
+                <div className={styles.transporterTableWrapper}>
+                    <div className={styles.transporterTable}>
+                        <GenusTableData data={transporterDataState} transporterIDs={transporterIDsState}/>
+                    </div>
+                </div>
+            }
+            <h3 id={styles.transporterSearchHeader}>Search Transporter IDs to Compare Across Genus</h3>
+            <div className={styles.tranporterIDSearchWrapper}>
                 <form onSubmit={handleTransporterSearch}>
-                    <input placeholder="Enter Sequence ID to Compare Here..." type="text"></input>
-                    <input type="submit"></input>
+                    <input className={styles.transporterIDSearch} placeholder="Enter Transporter ID to Compare Here..." type="text"></input>
+                    <button className={styles.button} type="submit">Compare</button>
                 </form>
             </div>
             <div>
-                <h3>{transporterSearch}</h3>
+                <h3>Transporter ID- {transporterSearch}</h3>
             </div>
             <div className={styles.transporterBarChartWrapper}>
-                <Bar data={transporterBarChartData}></Bar>
+                {chartLoaded &&
+                    <Bar data={transporterBarChartData}></Bar>
+                }
             </div>
         </div>
     );
@@ -90,22 +153,17 @@ export async function getServerSideProps(context){
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            genus: genus
+            genus: genus,
+            level: "Level 5",
         })
     }
     const genusDataRes = await fetch("http://localhost:4000/retrieveGenusData", retrieveGenusDataOptions);
     const genusData = await genusDataRes.json();
 
     //count transporters by species
-    const tableData = countTransporters(genusData.data, availableSpecies);
+    const tableData = countTransporters(genusData.data, availableSpecies, "Transporter_id");
     const transporterData = tableData.data;
     const transporterIDs = tableData.keys;
-
-    let nullChartData = [{}]
-    for(let i = 0; i < availableSpecies.length; i++){
-        nullChartData[0][availableSpecies[i].species] = 0;
-    }
-    nullChartData = makeTransporterChartData(nullChartData, 0, availableSpecies);
 
     return{
         props: {
@@ -114,14 +172,13 @@ export async function getServerSideProps(context){
             search: search,
             transporterData: transporterData,
             transporterIDs: transporterIDs,
-            nullChartData: nullChartData,
         }
     }
 
 
 }
 
-export function countTransporters(data, speciesObj){
+export function countTransporters(data, speciesObj, level){
     //arr of objs where keys are transporterID, species names with quantity as values
     //make map of tarnsporters and their quantities
     //one map for each species
@@ -129,6 +186,7 @@ export function countTransporters(data, speciesObj){
     //make obj, push id to obj with prop for each species if not there.
     //if there, increment the coressponding species count
     //then convert obj to arr
+    console.log("in count: ", data);
     let species = [];
     const speciesKeys = Object.keys(speciesObj);
     for(let i = 0; i < speciesKeys.length; i++){
@@ -136,17 +194,17 @@ export function countTransporters(data, speciesObj){
     }
     let dataObj = {};
     for(let i = 0; i < data.length; i++){
-        if(data[i].Transporter_id in dataObj){
-            dataObj[data[i].Transporter_id][data[i].species] += 1;
+        if(data[i][level] in dataObj){
+            dataObj[data[i][level]][data[i].species] += 1;
         }
         else{
-            dataObj[data[i].Transporter_id] = {};
+            dataObj[data[i][level]] = {};
             //add each species as a prop
             for(let j = 0; j < species.length; j++){
-                dataObj[data[i].Transporter_id][species[j]] = 0;
+                dataObj[data[i][level]][species[j]] = 0;
             }
             //increment the species that was first found to one
-            dataObj[data[i].Transporter_id][data[i].species] = 1;
+            dataObj[data[i][level]][data[i].species] = 1;
         }
     }
     let dataArr = [];
@@ -166,6 +224,7 @@ export function countTransporters(data, speciesObj){
 }
 
 function createAverages(data){
+    console.log("here it is: ", data[500])
     for(let i = 0; i < data.length; i++){
         const keys = Object.keys(data[i])
         let total = 0;
@@ -178,32 +237,24 @@ function createAverages(data){
     }
     return data;
 }
-function makeTransporterChartData(transporterData, index, availableSpecies){
-    let labels;
-    if(index === -1){
-        labels = availableSpecies
-        index = 0;
-    }
-    else{
-        labels = Object.keys(transporterData[index]);
-    }
+function makeTransporterChartData(transporterData, index){
+    const labels = Object.keys(transporterData[index]);
     const dataArr = [];
     for(let i = 0; i < labels.length; i++){
         dataArr.push(transporterData[index][labels[i]]);
     }
     dataArr[dataArr.length-1] = Number(dataArr[dataArr.length-1]);
-    console.log(dataArr);
     const data = {
         labels: labels,
         datasets: [{
             label: "Transporter Quantities",
             data: dataArr,
-            backGroundColor: [
-                'rgb(41, 47, 54)',
-                'rgb(78, 205, 196)',
-                'rgb(247, 255, 247)',
-                'rgb(255, 107, 107)',
-                'rgb(255, 230, 109)',
+            backgroundColor: [
+                'rgb(6, 141, 157)',
+                'rgb(83, 89, 154)',
+                'rgb(109, 157, 197)',
+                'rgb(128, 222, 217)',
+                'rgb(174, 236, 239)',
             ],
         }]
     }
@@ -212,7 +263,6 @@ function makeTransporterChartData(transporterData, index, availableSpecies){
 }
 
 function getChartID(transporterIDs, search){
-    console.log("search is: ", search);
     for(let i = 0; i < transporterIDs.length; i++){
         if(transporterIDs[i] === search){
             return {
@@ -222,7 +272,31 @@ function getChartID(transporterIDs, search){
         }
     }
     return {
-        index: -1,
+        index: 0,
         value: "",
     };
+}
+
+export function getLevelSQLName(level){
+    switch(level){
+        case("Level 5"):
+            level = "Transporter_id"
+            break;
+        case("Level 4"):
+            level = "Transporter_level4"
+            break;
+        case("Level 3"):
+            level = "Transporter_level3"
+            break;
+        case("Level 2"):
+            level = "Transporter_level2"
+            break;
+        case("Level 1"):
+            level = "Transporter_level1"
+            break;
+        default:
+            level = ""
+            throw "Error in getting level"
+    }
+    return level;
 }

@@ -10,7 +10,6 @@ export default function TaxonomyResultsTable(props){
     let filtersJSON = JSON.stringify(props.filters);
     let search = props.search;
     let numberOfFilters = filters.length;
-    console.log("element is: ", element);
     //search is array of the previous choices
     //reset search to only jave the previous searches, not results
     let newSearch = [];
@@ -52,7 +51,6 @@ export default function TaxonomyResultsTable(props){
         }
     }
     
-    console.log("path", nextLevelPath.pathname);
     return(
         <div>
             <Link href={nextLevelPath}>
