@@ -620,8 +620,14 @@
   overflow-y: scroll;
 }
 
-.transporterBarChartWrapper{
+.transporterBarChartWrapperWrapper{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 80%;
+}
+.transporterBarChartWrapper {
+  width: 100%;
 }
 
 .transporterIDSearchWrapper{
