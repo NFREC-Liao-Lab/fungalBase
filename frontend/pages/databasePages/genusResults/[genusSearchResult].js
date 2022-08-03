@@ -11,27 +11,32 @@ export default function genusSearchResults(props){
     const genus = props.genus;
     const search = props.search;
     const availableSpecies = props.availableSpecies;
-    const [transporterSearch, setTransporterSearch] = useState(props.transporterIDs[0]);
+    const [transporterSearch, setTransporterSearch] = useState("init");
+    const [initialStatus, setInitialStatus] = useState(true);
     const [transporterBarChartData, setTransporterBarChartData] = useState();
-    const [chartID, setChartID] = useState({index: 0, value: ""});
+    const [chartID, setChartID] = useState({index: 0, value: null});
     const [chartLoaded, setChartLoaded] = useState(false);
     const [transporterLevelState, setTransporterLevelState] = useState("Level 5");
     const [transporterDataState, setTransporterDataState] = useState(props.transporterData);
     const [transporterIDsState, setTransporterIDsState] = useState(props.transporterIDs);
     const [genusTableDataLoadState, setGenusTableDataLoadState] = useState(false);
+    const [foundState, setFoundState] = useState(false);
 
+    //useEffect that runs initially and sets transporterSearch empty
+    //
+
+    // useEffect(() => {
+    //     chartID.value ? setFoundState(true) : setFoundState(false);
+    // }, [transporterSearch])
     useEffect(() => {
-        setChartID(getChartID(transporterIDsState, transporterSearch));
-    }, [transporterSearch])
-    useEffect(() => {
-        let newData = makeTransporterChartData(transporterDataState, chartID.index)
+        let newData;
+        newData = makeTransporterChartData(transporterDataState, chartID.index)
         setTransporterBarChartData(newData);
         setChartLoaded(true);
     }, [chartID])
 
     useEffect(() => {
         const fetchTransporterData = async () => {
-            // const transporterData = await adjustTransporterData(transporterLevelState, availableSpecies, genus);
             //query to get data about genus
             const retrieveGenusDataOptions = {
                 method: 'POST',
@@ -45,7 +50,6 @@ export default function genusSearchResults(props){
             }
             const genusDataRes = await fetch("http://localhost:4000/retrieveGenusData", retrieveGenusDataOptions);
             const genusData = await genusDataRes.json();
-            console.log(genusData)
 
             let sqlLevel = getLevelSQLName(transporterLevelState);
 
@@ -64,12 +68,22 @@ export default function genusSearchResults(props){
         event.preventDefault();
         const search = event.target[0].value;
         setTransporterSearch(search);
+        const chartID = getChartID(transporterIDsState, search);
+        if(chartID.value){
+            setFoundState(true)
+            setChartID(chartID)
+        }
+        else {
+            setFoundState(false)
+        }
+        setInitialStatus(false);
+        setChartID(getChartID(transporterIDsState, search));
+
     }
 
     const handleLevelChange = (event) => {
         setTransporterLevelState(event.target.value); 
     }
-
     return(
         <div className={styles.genusPageWrapper}>
             <h1 className={styles.title}>Genus- {genus}</h1>
@@ -114,14 +128,20 @@ export default function genusSearchResults(props){
                     <button className={styles.button} type="submit">Compare</button>
                 </form>
             </div>
-            <div>
-                <h3>Transporter ID- {transporterSearch}</h3>
-            </div>
-            <div className={styles.transporterBarChartWrapper}>
-                {chartLoaded &&
-                    <Bar data={transporterBarChartData}></Bar>
-                }
-            </div>
+            {
+                foundState &&
+                   chartLoaded &&
+                   <div className={styles.transporterBarChartWrapperWrapper}>
+                        <h3>Transporter ID- {transporterSearch}</h3>
+                        <div className={styles.transporterBarChartWrapper}>
+                            <Bar data={transporterBarChartData}></Bar>
+                        </div>
+                    </div>
+            }
+            {
+                !foundState && !initialStatus &&
+                <h3>Transporter ID- {transporterSearch} not found</h3>
+            }
         </div>
     );
 }
@@ -186,7 +206,6 @@ export function countTransporters(data, speciesObj, level){
     //make obj, push id to obj with prop for each species if not there.
     //if there, increment the coressponding species count
     //then convert obj to arr
-    console.log("in count: ", data);
     let species = [];
     const speciesKeys = Object.keys(speciesObj);
     for(let i = 0; i < speciesKeys.length; i++){
@@ -224,7 +243,6 @@ export function countTransporters(data, speciesObj, level){
 }
 
 function createAverages(data){
-    console.log("here it is: ", data[500])
     for(let i = 0; i < data.length; i++){
         const keys = Object.keys(data[i])
         let total = 0;
@@ -273,7 +291,7 @@ function getChartID(transporterIDs, search){
     }
     return {
         index: 0,
-        value: "",
+        value: null,
     };
 }
 
