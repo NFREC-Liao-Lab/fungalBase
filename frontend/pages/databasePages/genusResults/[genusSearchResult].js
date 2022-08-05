@@ -1,85 +1,85 @@
 import styles from "../../../styles/Home.module.css"
 import TaxonomyResultsTable from "../../../components/taxonomyResultsTable";
-import GenusTableData from "../../../components/genusTableData";
 import { useState, useEffect } from "react";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
-
-
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 export default function genusSearchResults(props){
     const genus = props.genus;
     const search = props.search;
     const availableSpecies = props.availableSpecies;
-    const [transporterSearch, setTransporterSearch] = useState("init");
-    const [initialStatus, setInitialStatus] = useState(true);
-    const [transporterBarChartData, setTransporterBarChartData] = useState();
-    const [chartID, setChartID] = useState({index: 0, value: null});
-    const [chartLoaded, setChartLoaded] = useState(false);
+    // const [transporterSearch, setTransporterSearch] = useState("init");
+    // const [initialStatus, setInitialStatus] = useState(true);
+    // const [transporterBarChartData, setTransporterBarChartData] = useState();
+    // const [chartID, setChartID] = useState({index: 0, value: null});
+    // const [chartLoaded, setChartLoaded] = useState(false);
     const [transporterLevelState, setTransporterLevelState] = useState("Level 5");
-    const [transporterDataState, setTransporterDataState] = useState(props.transporterData);
-    const [transporterIDsState, setTransporterIDsState] = useState(props.transporterIDs);
-    const [genusTableDataLoadState, setGenusTableDataLoadState] = useState(false);
-    const [foundState, setFoundState] = useState(false);
+    // const [transporterDataState, setTransporterDataState] = useState(props.transporterData);
+    // const [transporterIDsState, setTransporterIDsState] = useState(props.transporterIDs);
+    // const [genusTableDataLoadState, setGenusTableDataLoadState] = useState(false);
+    // const [foundState, setFoundState] = useState(false);
+    const [countedDataState, setCountedDataState] = useState(false);
 
-    //useEffect that runs initially and sets transporterSearch empty
-    //
+    const { 
+        isLoading: loadingTableData,
+        isSuccess: tableDataSuccessful,
+        data: genusTableData,
+        mutate: addGenusTableData 
+    } = useMutation(retrieveGenusTableData); 
 
     // useEffect(() => {
-    //     chartID.value ? setFoundState(true) : setFoundState(false);
-    // }, [transporterSearch])
-    useEffect(() => {
-        let newData;
-        newData = makeTransporterChartData(transporterDataState, chartID.index)
-        setTransporterBarChartData(newData);
-        setChartLoaded(true);
-    }, [chartID])
+    //     let newData;
+    //     newData = makeTransporterChartData(transporterDataState, chartID.index)
+    //     setTransporterBarChartData(newData);
+    //     setChartLoaded(true);
+    // }, [chartID])
 
-    useEffect(() => {
-        const fetchTransporterData = async () => {
-            //query to get data about genus
-            const retrieveGenusDataOptions = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    genus: genus,
-                    level: transporterLevelState
-                })
-            }
-            const genusDataRes = await fetch("http://localhost:4000/retrieveGenusData", retrieveGenusDataOptions);
-            const genusData = await genusDataRes.json();
+    // useEffect(() => {
+        // query to get data about genus
+        
+        // const fetchTransporterData = async () => {
+        //     
+        //     const genusDataRes = await fetch("http://localhost:4000/retrieveGenusData", retrieveGenusDataOptions);
+        //     const genusData = await genusDataRes.json();
 
-            let sqlLevel = getLevelSQLName(transporterLevelState);
+        //     let sqlLevel = getLevelSQLName(transporterLevelState);
 
-            //count transporters by species
-            const tableData = countTransporters(genusData.data, availableSpecies, sqlLevel);
-            const transporterData = tableData.data;
-            const transporterIDs = tableData.keys;
-            setTransporterDataState(transporterData);
-            setTransporterIDsState(transporterIDs);
-            setGenusTableDataLoadState(true);
-        }
-        fetchTransporterData()  
-    }, [transporterLevelState])
+        //     //count transporters by species
+        //     const tableData = countTransporters(genusData.data, availableSpecies, sqlLevel);
+        //     const transporterData = tableData.data;
+        //     const transporterIDs = tableData.keys;
+        //     setTransporterDataState(transporterData);
+        //     setTransporterIDsState(transporterIDs);
+        //     setGenusTableDataLoadState(true);
+        // }
+        // fetchTransporterData()  
+    // }, [transporterLevelState])
     
-    const handleTransporterSearch = (event) => {
-        event.preventDefault();
-        const search = event.target[0].value;
-        setTransporterSearch(search);
-        const chartID = getChartID(transporterIDsState, search);
-        if(chartID.value){
-            setFoundState(true)
-            setChartID(chartID)
-        }
-        else {
-            setFoundState(false)
-        }
-        setInitialStatus(false);
-        setChartID(getChartID(transporterIDsState, search));
+    // const handleTransporterSearch = (event) => {
+    //     event.preventDefault();
+    //     const search = event.target[0].value;
+    //     setTransporterSearch(search);
+    //     const chartID = getChartID(transporterIDsState, search);
+    //     if(chartID.value){
+    //         setFoundState(true)
+    //         setChartID(chartID)
+    //     }
+    //     else {
+    //         setFoundState(false)
+    //     }
+    //     setInitialStatus(false);
+    //     setChartID(getChartID(transporterIDsState, search));
 
-    }
+    // }
+    useEffect(() => {
+        addGenusTableData(
+            {
+                transporterLevelState: transporterLevelState,
+                availableSpecies: availableSpecies,
+                genus: genus,
+            });
+    }, [transporterLevelState]);
 
     const handleLevelChange = (event) => {
         setTransporterLevelState(event.target.value); 
@@ -110,39 +110,49 @@ export default function genusSearchResults(props){
                     </select>
             </div>
             {
-                !genusTableDataLoadState && 
+                loadingTableData && 
                 <h3>Loading Table...</h3>
             }
             {
-                genusTableDataLoadState &&
-                <div className={styles.transporterTableWrapper}>
-                    <div className={styles.transporterTable}>
-                        <GenusTableData data={transporterDataState} transporterIDs={transporterIDsState}/>
-                    </div>
-                </div>
+                tableDataSuccessful &&
+                <h3>done</h3>
             }
-            <h3 id={styles.transporterSearchHeader}>Search Transporter IDs to Compare Across Genus</h3>
-            <div className={styles.tranporterIDSearchWrapper}>
-                <form onSubmit={handleTransporterSearch}>
-                    <input className={styles.transporterIDSearch} placeholder="Enter Transporter ID to Compare Here..." type="text"></input>
-                    <button className={styles.button} type="submit">Compare</button>
-                </form>
             </div>
-            {
-                foundState &&
-                   chartLoaded &&
-                   <div className={styles.transporterBarChartWrapperWrapper}>
-                        <h3>Transporter ID- {transporterSearch}</h3>
-                        <div className={styles.transporterBarChartWrapper}>
-                            <Bar data={transporterBarChartData}></Bar>
-                        </div>
-                    </div>
-            }
-            {
-                !foundState && !initialStatus &&
-                <h3>Transporter ID- {transporterSearch} not found</h3>
-            }
-        </div>
+
+            // {
+            //     !genusTableDataLoadState && 
+            //     <h3>Loading Table...</h3>
+            // }
+            // {
+            //     genusTableDataLoadState &&
+            //     <div className={styles.transporterTableWrapper}>
+            //         <div className={styles.transporterTable}>
+            //             <GenusTableData data={transporterDataState} transporterIDs={transporterIDsState}/>
+            //         </div>
+            //     </div>
+            // }
+            // <h3 id={styles.transporterSearchHeader}>Search Transporter IDs to Compare Across Genus</h3>
+            // <div className={styles.tranporterIDSearchWrapper}>
+            //     <form onSubmit={handleTransporterSearch}>
+            //         <input className={styles.transporterIDSearch} placeholder="Enter Transporter ID to Compare Here..." type="text"></input>
+            //         <button className={styles.button} type="submit">Compare</button>
+            //     </form>
+            // </div>
+            // {
+            //     foundState &&
+            //        chartLoaded &&
+            //        <div className={styles.transporterBarChartWrapperWrapper}>
+            //             <h3>Transporter ID- {transporterSearch}</h3>
+            //             <div className={styles.transporterBarChartWrapper}>
+            //                 <Bar data={transporterBarChartData}></Bar>
+            //             </div>
+            //         </div>
+            // }
+            // {
+            //     !foundState && !initialStatus &&
+            //     <h3>Transporter ID- {transporterSearch} not found</h3>
+            // }
+        // {/* </div> */}
     );
 }
 
@@ -181,17 +191,17 @@ export async function getServerSideProps(context){
     const genusData = await genusDataRes.json();
 
     //count transporters by species
-    const tableData = countTransporters(genusData.data, availableSpecies, "Transporter_id");
-    const transporterData = tableData.data;
-    const transporterIDs = tableData.keys;
+    // const tableData = countTransporters(genusData.data, availableSpecies, "Transporter_id");
+    // const transporterData = tableData.data;
+    // const transporterIDs = tableData.keys;
 
     return{
         props: {
             genus: genus,
             availableSpecies: availableSpecies,
             search: search,
-            transporterData: transporterData,
-            transporterIDs: transporterIDs,
+            // transporterData: transporterData,
+            // transporterIDs: transporterIDs,
         }
     }
 
@@ -231,10 +241,11 @@ export function countTransporters(data, speciesObj, level){
     for(let i = 0; i < dataObjKeys.length; i++){
         dataArr.push(dataObj[dataObjKeys[i]]);
     }
-
     dataArr = createAverages(dataArr);
 
     dataArr = dataArr.sort((a, b) => {return b.Average-a.Average})
+
+    console.log(dataArr);
 
     return {
         data: dataArr,
@@ -318,3 +329,23 @@ export function getLevelSQLName(level){
     }
     return level;
 }
+
+const retrieveGenusTableData = async (variables) => {
+    const retrieveGenusDataOptions = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            genus: variables.genus,
+            level: variables.transporterLevelState
+        })
+    };
+    console.log(variables);
+    const res = await fetch("http://localhost:4000/retrieveGenusData", retrieveGenusDataOptions);
+    const tableResData = await res.json();
+    const sqlName = getLevelSQLName(variables.transporterLevelState);
+    const countedTransporters = countTransporters(tableResData, variables.availableSpecies, sqlName);
+    return tableResData;
+}
+
