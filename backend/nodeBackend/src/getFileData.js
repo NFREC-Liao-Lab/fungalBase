@@ -372,7 +372,6 @@ app.post("/retrieveGenusData", async (req, res) => {
         transporterQuery += " OR Genome_id=?"
     }
     transporterQuery += ";"
-    console.log({transporterQuery, genomeIDArray})
     let transporterData = await connection.query(transporterQuery, genomeIDArray)
     //add species to
     for(let i = 0; i < transporterData.length; i++){
@@ -384,6 +383,7 @@ app.post("/retrieveGenusData", async (req, res) => {
             }
         }
     }
+    console.log("data sent: ", transporterData);
 
     res.status(200).json({data: transporterData});
 });
